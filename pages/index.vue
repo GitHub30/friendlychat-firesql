@@ -1,8 +1,16 @@
 <template>
   <div class="container">
-    <div>
-      <p v-for="message in messages" :key="message.id">
-        {{ message.message }} ({{ message.username }})
+    <div class="chatbox">
+      <p
+        v-for="message in messages"
+        :key="message.id"
+        :style="{
+          textAlign: message.username === username ? 'right' : 'left'
+        }"
+      >
+        {{ message.message }}
+        <!-- eslint-disable-next-line prettier/prettier -->
+        <span v-if="message.username !== username">({{ message.username }})</span>
       </p>
     </div>
     <form @submit.prevent="insert">
@@ -10,6 +18,11 @@
       <input v-model="newMessage" type="text" />
       <button>送信</button>
     </form>
+    <div class="username">
+      <label for="username">名前:</label>
+      <!-- eslint-disable-next-line vue/html-closing-bracket-spacing, prettier/prettier -->
+      <input id="username" v-model="username" type="text" >
+    </div>
   </div>
 </template>
 
@@ -107,7 +120,10 @@ export default {
     return {
       messages: [],
       newMessage: '',
-      firesql: null
+      firesql: null,
+      username: navigator.userAgent.includes('Chrome')
+        ? '山田太郎😊'
+        : '日本花子💞'
     }
   },
   mounted() {
@@ -126,6 +142,7 @@ export default {
     onMessages(rows, type) {
       // eslint-disable-next-line no-console
       console.log(rows, type)
+      if (typeof this.messages === 'undefined') this.messages = []
       if (type === 'WriteRowsEvent') {
         // eslint-disable-next-line prettier/prettier
         this.messages.push(...rows.map(row => row.values))
@@ -148,12 +165,9 @@ export default {
     insert() {
       // eslint-disable-next-line no-console
       console.log('insert')
-      const username = navigator.userAgent.includes('Chrome')
-        ? '山田太郎😊'
-        : '日本花子💞'
       this.firesql
         .table('messages')
-        .insert({ username, message: this.newMessage })
+        .insert({ username: this.username, message: this.newMessage })
     }
   }
 }
@@ -166,7 +180,14 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
   text-align: center;
+}
+
+.chatbox {
+  width: 320px;
+  max-height: 512px;
+  overflow-y: auto;
 }
 
 .title {
@@ -189,5 +210,11 @@ export default {
 
 .links {
   padding-top: 15px;
+}
+
+.username {
+  position: fixed;
+  top: 16px;
+  left: 64px;
 }
 </style>
